@@ -1,0 +1,751 @@
+name: app-pipeline
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  determine-runner:
+    timeout-minutes: 5
+    name: Determine which runner to use
+    runs-on: ubuntu-latest
+    outputs:
+      runner-x86: ${{ steps.check-runners.outputs.runner-x86 }}
+      runner-macos: ${{ steps.check-runners.outputs.runner-macos }}
+    steps:
+      - name: Check runners
+        id: check-runners
+        run: |
+          # if vars.BYPASS_LOCAL is set, skip runner detection
+          if [ -n "${{ vars.BYPASS_LOCAL }}" ]; then
+            echo "vars.BYPASS_LOCAL is set. Skipping runner detection."
+            echo "runner-x86=ubuntu-latest" >> $GITHUB_OUTPUT
+            echo "runner-macos=macos-latest" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get organization runners for x86
+          org_runners=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.SELF_HOSTED_TOKEN }}" "https://api.github.com/orgs/${{ github.repository_owner }}/actions/runners")
+
+          # Get repository runners for macOS
+          repo_runners=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.SELF_HOSTED_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runners")
+
+          # Debug: Show organization runners
+          echo "Organization runners:"
+          echo "$org_runners" | jq -r '.runners[] | "\(.name): \([.labels[].name] | join(", "))"' 2>/dev/null || echo "No org runners found"
+          
+          # Debug: Show repository runners
+          echo "Repository runners:"
+          echo "$repo_runners" | jq -r '.runners[] | "\(.name): \([.labels[].name] | join(", "))"' 2>/dev/null || echo "No repo runners found"
+          
+          # Check for available x86 runner from organization
+          x86_available=$(echo "$org_runners" | jq -r '.runners[] | select(.status == "online" and .busy == false) | select(.labels != null) | select((.labels[] | select(.name | contains("X64"))) != null) | .name' 2>/dev/null | head -1)
+
+          # Check for available macOS runner - safer query
+          macOS_available=$(echo "$repo_runners" | jq -r '.runners[] | select(.status == "online" and .busy == false) | select(.labels != null) | select((.labels[] | select(.name | contains("macOS"))) != null) | .name' 2>/dev/null)
+
+          # See if x86 runner is available and not running locally testing with ACT
+          if [ -n "$x86_available" ]; then
+            echo "Found available x86 runner: $x86_available"
+            echo "runner-x86=X64" >> $GITHUB_OUTPUT
+          else
+            echo "No available x86 runner found, using ubuntu-latest"
+            echo "runner-x86=ubuntu-latest" >> $GITHUB_OUTPUT
+          fi
+
+          # See if macOS runner is available
+          if [ -n "$macOS_available" ]; then
+            echo "Found available macOS runner: $macOS_available"
+            echo "runner-macos=macOS" >> $GITHUB_OUTPUT
+          else
+            echo "No available macOS runner found, using macos-15"
+            echo "runner-macos=macos-latest" >> $GITHUB_OUTPUT
+          fi
+
+  build-validations:
+    if: github.event_name == 'pull_request'
+    needs: determine-runner
+    runs-on: ${{ needs.determine-runner.outputs.runner-x86 }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Log
+        run: echo "${{ github.event_name == 'pull_request' || 'stage' }}"
+
+      - name: "Get sdkVersion from build.gradle.kts"
+        id: read_version
+        shell: bash
+        run: |
+          version=`perl -nlE 'say if s/^\s*compileSdk \= \s*(\d+)/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "sdkVersion=$version" >> $GITHUB_OUTPUT
+          echo "Android SDK Version: $version"
+
+          version=`perl -nlE 'say if s/^\s*ndkVersion \= \s*\"([^\"]+)\"/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "ndk-version=$version" >> $GITHUB_OUTPUT
+          echo "NDK Version: $version"
+
+      - name: Set up Java
+        if: runner.environment == 'self-hosted'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'jetbrains'
+          java-version: '17'
+
+      - name: Cache Gradle dependencies
+        if: runner.environment == 'self-hosted'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.gradle/caches
+            ${{ github.workspace }}/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Android SDK
+        if: runner.environment == 'self-hosted'
+        uses: amyu/setup-android@v5
+        with:
+          sdk-version: ${{ steps.read_version.outputs.sdkVersion }}
+          ndk-version: ${{ steps.read_version.outputs.ndk-version }}
+          cache-key: android-sdk-${{ steps.read_version.outputs.sdkVersion }}-ndk-${{ steps.read_version.outputs.ndk-version }}-v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Run lint
+        run: melos flutter-analyze || exit 12
+
+      - name: Generate mocks
+        run: melos build_mocks || exit 14
+
+      - name: Run unit tests
+        run: melos test-coverage || exit 13
+
+      - name: Enforce coverage threshold
+        run: |
+          # Per-package coverage thresholds — adjust as test suites mature
+          declare -A THRESHOLDS
+          THRESHOLDS["packages/healthy_living_packages/healthy_living_shared/"]=60
+          THRESHOLDS["packages/healthy_living_packages/healthy_living_network/"]=70
+          THRESHOLDS["packages/healthy_living_packages/healthy_living_data/"]=65
+          THRESHOLDS["packages/healthy_living_packages/healthy_living_domain/"]=70
+          DEFAULT_THRESHOLD=60
+          FAILED=0
+          for package in packages/healthy_living_packages/*/; do
+            COVERAGE_FILE="$package/coverage/lcov.info"
+            if [ -f "$COVERAGE_FILE" ]; then
+              TOTAL=$(grep -c "^DA:" "$COVERAGE_FILE" || echo 0)
+              COVERED=$(grep -c "^DA:[0-9]*,[^0]" "$COVERAGE_FILE" || echo 0)
+              if [ "$TOTAL" -gt 0 ]; then
+                PCT=$(echo "scale=0; $COVERED * 100 / $TOTAL" | bc)
+                THRESHOLD=${THRESHOLDS[$package]:-$DEFAULT_THRESHOLD}
+                echo "$package: $PCT% (threshold: $THRESHOLD%)"
+                if [ "$PCT" -lt "$THRESHOLD" ]; then
+                  echo "FAIL: $package coverage $PCT% is below $THRESHOLD%"
+                  FAILED=1
+                fi
+              fi
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then exit 1; fi
+
+  # ── Integration Tests (gated by INTEGRATION_TESTS_APPROVED secret) ────────
+  integration-tests:
+    if: github.event_name == 'pull_request' && vars.INTEGRATION_TESTS_APPROVED == 'true'
+    needs: [determine-runner, build-validations]
+    runs-on: ${{ needs.determine-runner.outputs.runner-x86 }}
+    timeout-minutes: 30
+    environment: stage
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - { tag: smoke, name: "Smoke Tests" }
+          - { tag: full, name: "Full Regression" }
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Create stage.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_GOOGLE_CLIENT_ID=${{ vars.ANDROID_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "SERVER_GOOGLE_CLIENT_ID=${{ vars.SERVER_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_REVENUECAT_API_KEY=${{ secrets.ANDROID_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Run ${{ matrix.suite.name }}
+        working-directory: ./apps/healthy_living
+        run: |
+          flutter test integration_test/ \
+            --tags=${{ matrix.suite.tag }} \
+            --dart-define=ENVIRONMENT=stage \
+            --dart-define=INTEGRATION_TESTS_APPROVED=true \
+            --dart-define=TEST_ACCOUNT_EMAIL=${{ secrets.TEST_ACCOUNT_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PASSWORD=${{ secrets.TEST_ACCOUNT_PASSWORD }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_EMAIL=${{ secrets.TEST_ACCOUNT_PREMIUM_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_PASSWORD=${{ secrets.TEST_ACCOUNT_PREMIUM_PASSWORD }}
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.suite.tag }}-${{ github.run_id }}
+          path: |
+            ./apps/healthy_living/build/test_results/
+            ./apps/healthy_living/build/**/failures/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Quarantined Tests (always allowed to fail) ─────────────────────────────
+  integration-tests-quarantine:
+    if: github.event_name == 'pull_request' && vars.INTEGRATION_TESTS_APPROVED == 'true'
+    needs: [determine-runner, build-validations]
+    runs-on: ${{ needs.determine-runner.outputs.runner-x86 }}
+    timeout-minutes: 30
+    continue-on-error: true
+    environment: stage
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Create stage.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Run quarantined tests
+        working-directory: ./apps/healthy_living
+        run: |
+          flutter test integration_test/ \
+            --tags=quarantine \
+            --dart-define=ENVIRONMENT=stage \
+            --dart-define=INTEGRATION_TESTS_APPROVED=true \
+            --dart-define=TEST_ACCOUNT_EMAIL=${{ secrets.TEST_ACCOUNT_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PASSWORD=${{ secrets.TEST_ACCOUNT_PASSWORD }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_EMAIL=${{ secrets.TEST_ACCOUNT_PREMIUM_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_PASSWORD=${{ secrets.TEST_ACCOUNT_PREMIUM_PASSWORD }} || true
+
+      - name: Upload quarantine test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quarantine-test-results-${{ github.run_id }}
+          path: |
+            ./apps/healthy_living/build/test_results/
+            ./apps/healthy_living/build/**/failures/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  android-stage-build:
+    timeout-minutes: 30
+    needs: determine-runner
+    runs-on: ${{ needs.determine-runner.outputs.runner-x86 }}
+    environment: ${{ github.event_name == 'pull_request' || 'stage' }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Log
+        run: echo "${{ github.event_name == 'pull_request' || 'stage' }}"
+
+      - name: "Get sdkVersion from build.gradle.kts"
+        id: read_version
+        shell: bash
+        run: |
+          version=`perl -nlE 'say if s/^\s*compileSdk \= \s*(\d+)/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "sdkVersion=$version" >> $GITHUB_OUTPUT
+          echo "Android SDK Version: $version"
+
+          version=`perl -nlE 'say if s/^\s*ndkVersion \= \s*\"([^\"]+)\"/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "ndk-version=$version" >> $GITHUB_OUTPUT
+          echo "NDK Version: $version"
+
+      - name: Set up Java
+        if: runner.environment == 'self-hosted'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'jetbrains'
+          java-version: '17'
+
+      - name: Cache Gradle dependencies
+        if: runner.environment == 'self-hosted'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.gradle/caches
+            ${{ github.workspace }}/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Android SDK
+        if: runner.environment == 'self-hosted'
+        uses: amyu/setup-android@v5
+        with:
+          sdk-version: ${{ steps.read_version.outputs.sdkVersion }}
+          ndk-version: ${{ steps.read_version.outputs.ndk-version }}
+          cache-key: android-sdk-${{ steps.read_version.outputs.sdkVersion }}-ndk-${{ steps.read_version.outputs.ndk-version }}-v5
+
+      - name: Accept Android licenses
+        if: runner.environment == 'self-hosted'
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Create ${{ vars.ENV_NAME }}.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_GOOGLE_CLIENT_ID=${{ vars.ANDROID_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "SERVER_GOOGLE_CLIENT_ID=${{ vars.SERVER_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_REVENUECAT_API_KEY=${{ secrets.ANDROID_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          cat apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Configure Gradle for Parallel Execution
+        if: runner.environment == 'self-hosted'
+        working-directory: ./apps/healthy_living/android
+        run: |
+          echo "" >> gradle.properties
+          echo "org.gradle.parallel=true" >> gradle.properties
+          echo "org.gradle.workers.max=8" >> gradle.properties
+
+      - name: Build STAGE Env APK file
+        working-directory: ./apps/healthy_living
+        run: |
+          if ! flutter build apk --flavor stage -t lib/main.dart --dart-define=ENVIRONMENT=stage --build-number $GITHUB_RUN_NUMBER; then
+          echo "Error::❌ Android build failed for flavor-stage"
+          exit 20
+          fi
+
+      - name: Upload STAGE APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-app-stage-release-artifact
+          path: ./apps/healthy_living/build/app/outputs/flutter-apk/app-stage-release.apk
+          retention-days: 1
+
+  android-stage-deployment:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' || 'stage' }}
+    needs: android-stage-build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-app-stage-release-artifact
+          path: ./pipeline-artifact
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ vars.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_DATA }}
+          groups: "ex2-team,ewg-client"
+          file: ./pipeline-artifact/app-stage-release.apk
+          releaseNotes: |
+            Build: ${{ github.run_number }}
+            Message: "${{ github.event.pull_request.title }} \n ${{ github.event.head_commit.message }}"
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+
+
+
+  ios-stage-build:
+    runs-on: ${{ needs.determine-runner.outputs.runner-macos }}
+    needs: determine-runner
+    timeout-minutes: 30
+    environment: ${{ github.event_name == 'pull_request' || 'stage' }}
+    steps:
+      - name: Pre-cleanup for self-hosted runners
+        if: runner.environment == 'self-hosted'
+        run: |
+          # Remove old build artifacts
+          rm -rf apps/healthy_living/build/ios
+          
+          # Clean up any leftover keychains
+          security delete-keychain build.keychain 2>/dev/null || true
+          security delete-keychain build-${{ github.run_id }}.keychain 2>/dev/null || true
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Log
+        run: echo "${{ github.event_name == 'pull_request' || 'stage' }}"
+
+      - name: Create ${{ vars.ENV_NAME }}.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_GOOGLE_CLIENT_ID=${{ vars.ANDROID_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "SERVER_GOOGLE_CLIENT_ID=${{ vars.SERVER_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_REVENUECAT_API_KEY=${{ secrets.ANDROID_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          cat apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/apps/healthy_living/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('apps/healthy_living/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Cache Xcode DerivedData
+        if: runner.environment != 'self-hosted'
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/DerivedData
+          key: ${{ runner.os }}-xcode-derived-${{ github.ref_name }}-${{ hashFiles('apps/healthy_living/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-derived-${{ github.ref_name }}-
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Build STAGE Env IOS Build
+        working-directory: ${{ github.workspace }}/apps/healthy_living
+        run: |
+          if ! flutter build ios --release --config-only --no-codesign --flavor stage -t lib/main.dart; then
+          echo "Error::❌ iOS build failed for flavor-stage"
+          exit 20
+          fi
+
+      - name: Update build number
+        working-directory: ${{ github.workspace }}/apps/healthy_living/ios
+        run: |
+          BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+          agvtool new-version -all $BUILD_NUMBER     
+
+      - name: Select Xcode
+        run: |
+          if [ "${{ runner.environment }}" == "self-hosted" ]; then
+            echo "Self-hosted runner: verifying Xcode installation"
+            xcodebuild -version
+          else
+            echo "GitHub-hosted runner: selecting Xcode 16.3"
+            if [ -d "/Applications/Xcode_16.3.app" ]; then
+              sudo xcode-select -s /Applications/Xcode_16.3.app
+            elif [ -d "/Applications/Xcode.app" ]; then
+              echo "Using default Xcode installation"
+              sudo xcode-select -s /Applications/Xcode.app
+            fi
+            xcodebuild -version
+          fi
+
+      - name: Install Apple certificate
+        run: |
+          KEYCHAIN_NAME="build-${{ github.run_id }}.keychain"
+          echo "${{ secrets.CERT_BASE64 }}" | base64 --decode > cert.p12
+          security create-keychain -p "" $KEYCHAIN_NAME
+          security default-keychain -s ~/Library/Keychains/$KEYCHAIN_NAME
+          security import cert.p12 -k ~/Library/Keychains/$KEYCHAIN_NAME -P "${{ secrets.CERT_PASSWORD }}" -T /usr/bin/codesign -T /usr/bin/security
+          security list-keychains -d user -s ~/Library/Keychains/$KEYCHAIN_NAME
+          security unlock-keychain -p "" ~/Library/Keychains/$KEYCHAIN_NAME
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" ~/Library/Keychains/$KEYCHAIN_NAME
+          # Prevent codesign prompts
+          security set-keychain-settings ~/Library/Keychains/$KEYCHAIN_NAME
+          
+          # Export keychain name for subsequent steps
+          echo "KEYCHAIN_NAME=$KEYCHAIN_NAME" >> $GITHUB_ENV
+
+      - name: Install provisioning profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          PROFILE_NAME="app-${{ github.run_id }}.mobileprovision"
+          echo "${{ secrets.PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_NAME"
+          echo "PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_NAME" >> $GITHUB_ENV
+
+      - name: Build iOS archive
+        working-directory: ${{ github.workspace }}/apps/healthy_living
+        env:
+          # Use branch-specific DerivedData for self-hosted to enable incremental builds without cross-branch corruption
+          DERIVED_DATA_PATH: "${{ github.workspace }}/DerivedData${{ runner.environment == 'self-hosted' && format('-{0}', github.ref_name) || '' }}"
+        run: |
+          echo "===== Starting iOS Archive Build ====="
+          echo "Using keychain: $KEYCHAIN_NAME"
+          echo "Using provisioning profile: $PROFILE_PATH"
+          echo "Using DerivedData path: $DERIVED_DATA_PATH"
+          
+          export CI=true
+          export FASTLANE_SKIP_UPDATE_CHECK=true
+          
+          # Unlock keychain before build
+          security unlock-keychain -p "" ~/Library/Keychains/$KEYCHAIN_NAME
+          
+          echo "Building iOS archive (output suppressed, logging to xcodebuild.log)..."
+          if ! xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme stage \
+            -configuration Release \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -allowProvisioningUpdates \
+            PROVISIONING_PROFILE_SPECIFIER="ewg-stage" \
+            OTHER_CODE_SIGN_FLAGS="--keychain ~/Library/Keychains/$KEYCHAIN_NAME" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Development" \
+            archive > xcodebuild.log 2>&1; then
+            
+            echo "❌ xcodebuild archive failed"
+            echo "========== BUILD LOG (last 250 lines) =========="
+            tail -250 xcodebuild.log
+            echo "========== END BUILD LOG =========="
+            exit 1
+          fi
+
+          echo "===== Archive Build Completed ====="
+          if [ -d "build/ios/archive/Runner.xcarchive" ]; then
+            echo "✅ Archive created successfully"
+            ls -lh build/ios/archive/
+          else
+            echo "❌ Archive was not created at expected location"
+            echo "Contents of build/ios:"
+            ls -R build/ios/ || echo "build/ios/ does not exist"
+            echo "========== BUILD LOG (last 250 lines) =========="
+            tail -250 xcodebuild.log
+            echo "========== END BUILD LOG =========="
+            exit 1
+          fi
+
+      - name: Export IPA
+        working-directory: ${{ github.workspace }}/apps/healthy_living
+        run: |
+         xcodebuild -exportArchive \
+         -archivePath build/ios/archive/Runner.xcarchive \
+         -exportOptionsPlist ios/exportOptionsStage.plist \
+         -exportPath build/ios/ipa
+
+      - name: Upload xcodebuild.log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs-${{ github.run_id }}
+          path: ${{ github.workspace }}/apps/healthy_living/xcodebuild.log
+          retention-days: 1
+
+      - name: Cleanup xcodebuild.log
+        if: always()
+        run: |
+          rm -f ${{ github.workspace }}/apps/healthy_living/xcodebuild.log || true
+
+      - name: Upload STAGE iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-stage-release-artifact
+          path: ${{ github.workspace }}/apps/healthy_living/build/ios/
+          retention-days: 1
+
+      - name: Cleanup for self-hosted runners
+        if: always() && runner.environment == 'self-hosted'
+        run: |
+          # Remove unique provisioning profile
+          rm -f "$PROFILE_PATH" 2>/dev/null || true
+          
+          # Remove keychain
+          security delete-keychain "$KEYCHAIN_NAME" 2>/dev/null || true
+          
+          # Clean build artifacts (but keep DerivedData for incremental builds)
+          rm -rf ${{ github.workspace }}/apps/healthy_living/build/ios/archive 2>/dev/null || true
+          
+          # Clean up old DerivedData folders not modified in 7 days
+          echo "Cleaning up old DerivedData folders..."
+          find "${{ github.workspace }}" -maxdepth 1 -type d -name "DerivedData-*" -mtime +7 -exec rm -rf {} \; 2>/dev/null || true
+          echo "Remaining DerivedData folders:"
+          find "${{ github.workspace }}" -maxdepth 1 -type d -name "DerivedData-*" -exec ls -ld {} \; 2>/dev/null || echo "No DerivedData folders found"
+          
+          echo "Cleanup completed"
+
+  ios-stage-deployment:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' || 'stage' }}
+    needs: ios-stage-build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-app-stage-release-artifact
+          path: ./pipeline-artifact
+
+      # Publish to Firebase App Distribution on PR merge only
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ vars.FIREBASE_IOS_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_DATA }}
+          groups: "ex2-team,ewg-client"
+          file: ./pipeline-artifact/ipa/ewg_app.ipa
+          releaseNotes: |
+            Build: ${{ github.run_number }}
+            Message: "${{ github.event.pull_request.title }} \n ${{ github.event.head_commit.message }}"
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+
+  widgetbook-deployment:
+    continue-on-error: true
+    needs: determine-runner
+    runs-on: ${{ needs.determine-runner.outputs.runner-x86 }}
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: "Get sdkVersion from build.gradle.kts"
+        id: read_version
+        shell: bash
+        run: |
+          version=`perl -nlE 'say if s/^\s*compileSdk \= \s*(\d+)/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "sdkVersion=$version" >> $GITHUB_OUTPUT
+          echo "Android SDK Version: $version"
+
+          version=`perl -nlE 'say if s/^\s*ndkVersion \= \s*\"([^\"]+)\"/$1/g' apps/healthy_living/android/app/build.gradle.kts`
+          echo "ndk-version=$version" >> $GITHUB_OUTPUT
+          echo "NDK Version: $version"
+
+      - name: Set up Java
+        if: runner.environment == 'self-hosted'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'jetbrains'
+          java-version: '17'
+
+      - name: Cache Gradle dependencies
+        if: runner.environment == 'self-hosted'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.gradle/caches
+            ${{ github.workspace }}/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Android SDK
+        if: runner.environment == 'self-hosted'
+        uses: amyu/setup-android@v5
+        with:
+          sdk-version: ${{ steps.read_version.outputs.sdkVersion }}
+          ndk-version: ${{ steps.read_version.outputs.ndk-version }}
+          cache-key: android-sdk-${{ steps.read_version.outputs.sdkVersion }}-ndk-${{ steps.read_version.outputs.ndk-version }}-v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Run build runner
+        working-directory: ./apps/styleguide
+        run: dart run build_runner build -d
+
+      - name: Build Widgetbook Web
+        working-directory: ./apps/styleguide
+        run: flutter build web -t lib/src/styleguide_main.dart
+
+      - name: Install Widgetbook CLI
+        run: dart pub global activate widgetbook_cli
+
+      - name: Push Widgetbook Build
+        working-directory: ./apps/styleguide
+        run: widgetbook cloud build push --api-key ${{ secrets.WIDGETBOOK_CLOUD_API_KEY }} 
+          --branch ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          --commit ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}

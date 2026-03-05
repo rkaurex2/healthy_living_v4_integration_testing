@@ -1,0 +1,1 @@
+enum AuthScreenStatus { initial, loading, success, failure,localDataLoaded,profileUpdateSuccess,changedPasswordSuccess}

@@ -1,0 +1,16 @@
+{
+  "myItems_lists_MyItems":"My Items",
+  "myItems_lists_NameYourList":"Name your list",
+  "myItems_lists_newList":"New List",
+  "myItems_lists_createList":"Create a List",
+  "myItems_lists_searchLists":"Search lists",
+  "myItems_lists_signIn":"Sign in",
+  "myItems_lists_createAnAccount":"Create an Account",
+  "myItems_lists_lists":"Lists",
+  "myItems_lists_history":"History",
+  "myItems_lists_myList":"My List",
+  "myItems_history_yourActivity": "Your activity will be saved here",
+  "myItems_history_beginScanning": "Begin scanning, searching and browsing!",
+  "myItems_history_yourHistoryIsEmpty": "Your history is empty",
+  "myItems_history_yourHistoryIsEmptyDescription": "Scan, search, or browse to keep track of the products you’ve viewed."
+}

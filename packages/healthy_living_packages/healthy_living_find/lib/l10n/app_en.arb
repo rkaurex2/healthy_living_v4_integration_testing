@@ -1,0 +1,54 @@
+{
+  "find_tabs_all": "All",
+  "find_tabs_brands": "Brands",
+  "find_tabs_categories": "Categories",
+  "find_tabs_products": "Products",
+  "find_tabs_ingredients": "Ingredients",
+  "find_search_noResultsMatch": "No results match “{searchedText}”",
+  "@find_search_noResultsMatch": {
+    "placeholders": {
+      "searchedText": {
+        "type": "String",
+        "format": "compact"
+      }
+    }
+  },
+  "find_search_checkTheSpelling": "Check the spelling or try a new search",
+  "find_searchTextInput_hintText": "Search products, brands, ingredients...",
+  "find_noSearch_smarterChoicesStartHere": "Smarter choices start here ...",
+  "find_noSearch_learnWhatsReallyInYourFood": "Learn what’s really in your food, personal care and cleaning products",
+  "find_allTab_noResultsFoundForSection": "No {sectionName} found for {searchQuery}",
+  "@find_allTab_noResultsFoundForSection": {
+    "placeholders": {
+      "sectionName": {
+        "type": "String",
+        "format": "compact"
+      },
+      "searchQuery": {
+        "type": "String",
+        "format": "compact"
+      }
+    }
+  },
+  "find_tabs_lists": "Lists",
+  "browse_personal_care_category":"Personal Care",
+  "browse_cleaners_category":"Cleaners",
+  "browse_food_category":"Food",
+  "find_browse_productsWithoutHarmfulIngredients":"Products without harmful \ningredients.",
+  "find_browse_explore":"Explore",
+  "find_browse_allScores":"All Scores",
+  "find_browse_featuredCategories":"Featured Categories",
+  "find_browse_cleanersCategories":"Cleaners Categories",
+  "find_browse_foodCategories":"Food Categories",
+  "find_browse_personalCareCategories":"Personal Care Categories",
+  "find_browse_ewgVerifiedByCategory":"EWG Verified By Category",
+  "find_browse_searchEWGVerifiedProducts":"Search EWG verified products",
+  "find_browse_sunscreens":"Sunscreens",
+  "find_browse_ewgLatestPicksFor":"EWG’s latest picks for \nsmart sun protection.",
+  "find_browse_failedToLoadCategories":"Failed to load categories",
+  "find_browse_mattresses":"Mattresses",
+  "find_browse_diapers":"Diapers",
+  "find_browse_noProductsFound":"No products found",
+  "find_browse_tryChangingOrRemovingFilters":"Try changing or removing filters",
+  "find_browse_searchYourForProduct":"search for your product"
+  }

@@ -1,0 +1,29 @@
+class IntegerConstants {
+  static const int minPasswordLength = 6;
+  static const int createListNameLength = 50;
+  static const int searchShimmerListItemCount = 8;
+  static const defaultPerPage = 10;
+  static const maxVisibleBrands = 3;
+  static const maxVisibleCategories = 3;
+  static const maxVisibleProducts = 3;
+  static const maxVisibleIngredients = 3;
+  static const maxVisibleLists = 3;
+  static const defaultDebounceDurationInMilliSeconds = 500;
+  static const defaultBrandsPerPage = 20;
+  static const defaultCategoriesPerPage = 20;
+  static const defaultIngredientsPerPage = 20;
+  static const defaultListsPerPage = 20;
+  static const defaultProductsPerPage = 20;
+  static const defaultHomeProductsPerPage = 10;
+  static const int defaultPage = 1;
+  static const double defaultPaginationThreshold = 0.9;
+  static const int defaultSearchTabPaginationSkeletonLength = 1;
+  static const int sunscreenActiveIngredientsLength = 8;
+  static const int maxPollingAttempts = 60;
+  static const int startPollingInterval = 2;
+  static const int maxPollingDuration = 70;
+  static const int pollingAttempts = 0;
+  static const int myListTapListsIndex = 0;
+  static const int myListTapHistoryIndex = 1;
+  static const int myListHistoryFilterDefaultSelection = 0;
+}

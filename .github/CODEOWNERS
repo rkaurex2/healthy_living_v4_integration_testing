@@ -1,0 +1,33 @@
+# CODEOWNERS — EWG Healthy Living v4
+# Each line maps a file/path pattern to the GitHub team or individual responsible.
+# Reviewers are auto-assigned on PRs that touch matching paths.
+#
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Default owner (catch-all) ─────────────────────────────────────────────────
+*                                               @AstralRider
+
+# ── CI / DevOps ───────────────────────────────────────────────────────────────
+.github/                                        @AstralRider
+melos.yaml                                      @AstralRider
+
+# ── App (Flutter) ─────────────────────────────────────────────────────────────
+apps/healthy_living/                             @AstralRider
+apps/styleguide/                                 @AstralRider
+
+# ── Packages ──────────────────────────────────────────────────────────────────
+packages/                                        @AstralRider
+
+# ── Design System ─────────────────────────────────────────────────────────────
+packages/design_system/                          @AstralRider
+
+# ── Unit & Widget Tests ──────────────────────────────────────────────────────
+**/test/                                         @AstralRider
+
+# ── Integration Tests ─────────────────────────────────────────────────────────
+apps/healthy_living/integration_test/            @AstralRider
+
+# ── Test Infrastructure ──────────────────────────────────────────────────────
+TEST_COVERAGE.md                                 @AstralRider
+FLAKINESS_POLICY.md                              @AstralRider
+TESTING_OWNERSHIP.md                             @AstralRider

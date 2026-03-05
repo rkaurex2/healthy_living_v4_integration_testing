@@ -1,0 +1,421 @@
+{
+  "shared_textInput_search_hint": "Search products, brands, ingredients...",
+  "healthyLiving_bottomNavBar_home": "Home",
+  "healthyLiving_bottomNavBar_find": "Find",
+  "healthyLiving_bottomNavBar_scan": "Scan",
+  "healthyLiving_bottomNavBar_myItems": "My Items",
+  "healthyLiving_bottomNavBar_account": "Account",
+  "general_networkErrorTitle": "No internet connection. Please try again later.",
+  "general_serverErrorTitle": "Cannot connect to the server. Please try again.",
+  "general_unknownErrorTitle": "We are unable to process your request. Please try again.",
+  "general_tryAgainMessage": "Please try again.",
+  "general_failedToLoad": "Failed to Load",
+  "general_errorMessage_somethingWentWrong": "Something went wrong. Please try again.",
+  "shared_countryPicker_country": "Country",
+  "shared_countryPicker_selectCountry": "Select Country",
+  "product_rating_hazardLowestText": "Lowest Hazard",
+  "product_rating_hazardLowText": "Low Hazard",
+  "product_rating_hazardModerateText": "Moderate Hazard",
+  "product_rating_hazardHighText": "High Hazard",
+  "product_rating_hazardHighestText": "Highest Hazard",
+  "product_rating_hazardVerifiedText": "Verified",
+  "product_rating_LowText": "Low",
+  "product_rating_ModerateText": "Moderate",
+  "product_rating_HighText": "High",
+  "general_urlLaunch_urlIsNotValid":"URL is not valid",
+  "general_urlLaunch_urlIsNotSupported":"URL is not supported",
+  "general_list_nameYourList":"Name your list",
+  "general_list_newList":"New list",
+  "general_list_createList":"Create List",
+  "general_list_createAList":"Create a List",
+  "general_list_enterListName":"Enter list name",
+  "general_list_editListSave":"Save",
+  "healthyLivingShared_newsletter_newsletterScreenTitle": "Newsletter",
+  "healthyLivingShared_newsletter_joinEwgEMailList": "Join EWG’s Email List",
+  "healthyLivingShared_newsletter_subscribeToOurNewsletter": "Subscribe to our newsletter to get health tips, alerts, promotions to support our work, and more from EWG. You can unsubscribe at any time.",
+  "healthyLivingShared_signup_zipCode": "Zip Code",
+  "healthyLivingShared_newsletter_subscribeToNewsletter": "Subscribe to Newsletter",
+  "healthyLivingShared_newsletter_home": "Home",
+  "healthyLivingShared_signup_email": "Email",
+  "healthyLivingShared_signup_mustEnterAValidEmail": "Must enter a valid email address",
+  "healthyLivingShared_newsletter_successfullySignedUpNewsletter": "You have successfully subscribed to our newsletter.",
+  "healthyLivingShared_signup_zipCodeIsRequired": "Zip code is required",
+  "healthyLivingShared_general_done": "Done",
+  "general_setUpYourPreferences": "Set up your preferences",
+  "general_products":"products",
+  "general_product":"product",
+  "healthyLivingShared_lists_myList":"My List",
+  "healthyLivingShared_lists_myFavoriteProducts":"My favorite products",
+  "healthyLivingShared_lists_yourListEmpty":"Your list is empty.",
+  "healthyLivingShared_lists_searchDatabase":"Browse or search our database to add products.",
+  "healthyLivingShared_lists_addProducts":"Add Products",
+  "healthyLivingShared_lists_saveList":"Save a Copy to My Lists",
+  "healthyLivingShared_lists_listAlreadyExist":"List name already exists. Choose a different name",
+  "general_ewgVerified":"EWG Verified",
+  "healthyLivingShared_lists_allProductAreEwg":"All products are EWG Verified",
+  "general_sort_alphabetical":"Alphabetical: A-Z",
+  "general_sort_checkList":"Checklist",
+  "general_view_all":"View All",
+  "general_view_all_products":"View All Products",
+  "general_brand":"Brands",
+  "general_categories":"Categories",
+  "general_productCategory_personalCare":"Personal Care",
+  "general_productCategory_cleaners":"Cleaners",
+  "general_productCategory_food":"Food",
+  "general_productCategory_sunscreen":"Sunscreens",
+  "general_productCategory_ewgVerifiedR":"EWG Verified®",
+  "general_list_browseProducts":"Browse Products",
+  "general_list_searchProducts":"Search products...",
+  "general_list_sortBy":"Sort By",
+  "general_listSort_alphaAZ":"Alphabetical: A to Z",
+  "general_listSort_alphaZA":"Alphabetical: Z to A",
+  "general_listSort_mostRecent":"Most Recently Added",
+  "healthyLivingShared_list_maxLength":"Max characters: 50",
+  "healthyLivingShared_lists_youDontHaveAnyList":"You don’t have any lists yet",
+  "healthyLivingShared_lists_listsAllowUs":"Lists allow us to keep you informed with any updates to products you care about, and makes shopping easier!",
+  "healthyLivingShared_lists_keepTrackProducts":"Keep track of the products you care about. Start your first list today!",
+  "healthyLivingShared_lists_deleteListConfirmation": "Are you sure you want to delete your list ",
+  "healthyLivingShared_lists_deleteListName": "‘{listName}’?",
+  "@healthyLivingShared_lists_deleteListName": {
+      "placeholders": {
+        "listName": {
+          "type": "String"
+        }
+      }
+    },
+  "general_cancel":"Cancel",
+  "general_ok":"Ok",
+  "general_delete":"Delete",
+  "healthyLivingShared_lists_deleteList":"Delete List",
+  "healthyLivingShared_lists_shareList":"Share List",
+  "healthyLivingShared_lists_removeProductsList":"Remove Products in List",
+  "healthyLivingShared_lists_removeProducts":"Remove Products",
+  "healthyLivingShared_lists_removeSelected":"Remove Selected",
+  "healthyLivingShared_lists_editList":"Edit List",
+  "healthyLivingShared_lists_editListName":"Edit list name",
+  "healthyLivingShared_lists_listOptions":"List Options",
+  "healthyLivingShared_newsletter_skip":"Skip",
+  "general_couldNotLaunch":"Could not launch",
+  "general_name":"Name",
+  "healthyLivingShared_appStore_couldNotOpenAppStore":"Could not open app store. Please try again later.",
+  "healthyLivingShared_appStore_ratingNotAvailable":"Rating not available on this platform.",
+  "healthyLivingShared_appStore_appInfo":"EWG gives you the information to make smarter choices.",
+  "general_hazard": "Hazard",
+  "general_noData": "No Data",
+  "healthyLivingShared_myItems_youAreSignedOut": "You’re signed out",
+  "healthyLivingShared_myItems_signInToSeeYourLists": "Sign in to see your saved lists and history, or create an account to start building them.",
+  "healthyLivingShared_product_dataAvailability": "{dataAvailability} Data",
+  "@healthyLivingShared_product_dataAvailability": {
+    "placeholders": {
+      "dataAvailability": {
+        "type": "String"
+      }
+    }
+  },
+  "general_addToList":"Add to List",
+  "general_addToListName":"Add to {listName}",
+   "@general_addToListName": {
+      "placeholders": {
+        "listName": {
+          "type": "String"
+        }
+      }
+    },
+  "general_clearSelections":"Clear Selections",
+  "general_compareProducts":"Compare Products",
+  "general_productOptions":"Product Options",
+  "general_addToList_productSuccessFully": "Product successfully added to the list.",
+  "general_addToList_addedTo": "Added to {listName}",
+  "@general_addToList_addedTo": {
+        "placeholders": {
+          "listName": {
+            "type": "String"
+          }
+        }
+      },
+  "general_addToList_alreadyAddedToList": "This product is already added to the selected list",
+  "general_addToList_orChooseWhichList":"Or choose which list to add to:",
+  "general_avoid":"Avoid",
+  "general_prefer":"Prefer",
+  "general_selectAll":"Select All",
+  "general_deSelectAll":"Deselect All",
+  "general_couldNotRemoveItems":"Couldn’t remove items",
+  "general_tryAgain":"Try Again",
+  "general_itemsRemoved":"items removed",
+  "general_itemRemoved":"item removed",
+  "general_list_thisListIsEmpty":"This list is empty",
+  "general_list_addProductsToBegin":"Add products to begin building it!",
+  "general_list_searchAllProducts":"Search all products",
+  "general_list_startListWith":"Start List with This Product",
+  "healthyLivingShared_hazardScore_title": "Hazard Score",
+  "healthyLivingShared_hazardScore_onlyEwgVerified": "Only EWG Verified",
+  "healthyLivingShared_hazardScore_best": "Best",
+  "healthyLivingShared_hazardScore_all": "All",
+  "healthyLivingShared_hazardScore_lowOrBetter": "Low or better",
+  "healthyLivingShared_hazardScore_moderateOrBetter": "Moderate or better",
+  "healthyLivingShared_hazardScore_high": "High",
+  "filters_personalCare_lowHazardTitle": "1 - 2",
+  "filters_personalCare_moderateHazardTitle": "3 - 6",
+  "filters_personalCare_highHazardTitle": "7 - 10",
+  "filters_food_lowHazardTitle": "1 - 3",
+  "filters_food_moderateHazardTitle": "4 - 7",
+  "filters_food_highHazardTitle": "8 - 10",
+  "filters_cleaners_lowHazardTitle": "A - B",
+  "filters_cleaners_moderateHazardTitle": "C",
+  "filters_cleaners_highHazardTitle": "D - F",
+  "healthyLivingShared_searchProduct_inputHintText": "Search Products",
+  "general_compare_addAnother": "Add Another",
+  "general_compare_addTwoProductsDesc": "Add 2 products to get a side-by-side comparison.",
+  "healthyLivingShared_product_youCanOnlyAdd":"You can only compare two products at a time",
+  "general_ewgGuides_title": "EWG Guides",
+  "healthyLivingShared_ewgGuides_dirtyDozenGuide": "Dirty Dozen™",
+  "healthyLivingShared_ewgGuides_cleanFifteenTm": "Clean \nFifteen™",
+  "healthyLivingShared_ewgGuides_dirtyDozenTm": "Dirty \nDozen™",
+  "healthyLivingShared_ewgGuides_cleanFifteenGuide": "Clean Fifteen™",
+  "healthyLivingShared_ewgGuides_tapWaterDatabase": "Tap Water \nDatabase",
+  "healthyLiving_ewgGuides_tapWaterDatabaseGuide": "Tap Water Database",
+  "healthyLivingShared_browseByProduct_searchPersonalCare": "Search personal care",
+  "healthyLivingShared_browseByProduct_ewgVerifiedFindSearch": "Search products, brands, ingredients",
+  "healthyLivingShared_browseByProduct_searchCleaners": "Search cleaners",
+  "healthyLivingShared_browseByProduct_searchFood": "Search food",
+  "healthyLivingShared_userGuide_ewgVerified": "EWG Verified®",
+  "general_browse_forYou": "For You",
+  "general_browse_recentActivity": "Recent Activity",
+  "search_product_inputHintText": "Search Products",
+  "filters_sort_hazardScoreBestToWorst": "Hazard Score: Best to Worst",
+  "filters_sort_hazardScoreWorstToBest": "Hazard Score: Worst to Best",
+  "filters_sort_alphabeticalAToZ": "Alphabetical: A to Z",
+  "filters_sort_alphabeticalZToA": "Alphabetical: Z to A",
+  "filters_header_title": "Filters",
+  "filters_contentScreen_title": "Filters",
+  "filters_contentScreen_sortFilterTitle": "Sort by",
+  "filters_contentScreen_sortByTitle": "Sort By",
+  "filters_contentScreen_categoriesFilterTitle": "Categories",
+  "filters_contentScreen_brandsFilterTitle": "Brands",
+  "filters_contentScreen_clearAllButton": "Clear All",
+  "filters_contentScreen_showResultsButton": "Show Results",
+  "filters_hazardScore_best": "Best",
+  "filters_hazardScore_low": "Low",
+  "filters_hazardScore_moderate": "Moderate",
+  "filters_hazardScore_high": "High",
+  "general_addToList_successAddedTo": "Success - Added to {listName}",
+  "@general_addToList_successAddedTo": {
+      "placeholders": {
+        "listName": {
+          "type": "String"
+        }
+      }
+    },
+ "general_healthConcern_notApplicable": "Not Applicable",
+    "general_yourAvoidedIngredient": "Your avoided ingredient",
+    "general_yourPreferredIngredient": "Your preferred ingredient",
+ "healthyLivingShared_ingredients_freeAvoidedIngredient": "Free from avoided ingredients",
+  "healthyLivingShared_ingredients_notSuitsIngredient": "This product may not suit you",
+  "healthyLivingShared_ingredients_containsPreferredIngredient": "Contains preferred ingredients",
+  "healthyLivingShared_ingredients_containAvoidedIngredient": "Contains avoided ingredients",
+  "general_ingredients_freeFrom": "Free from {ingredientName}",
+  "@general_ingredients_freeFrom": {
+        "placeholders": {
+          "ingredientName": {
+            "type": "String"
+          }
+        }
+  },
+  "general_ingredients_contains": "Contains {ingredientName}",
+  "@general_ingredients_contains": {
+          "placeholders": {
+            "ingredientName": {
+              "type": "String"
+            }
+          }
+  },
+  "general_ingredients_mayContainTraces": "May contain traces of {ingredientName}",
+  "@general_ingredients_mayContainTraces": {
+   "placeholders": {
+      "ingredientName": {
+            "type": "String"
+              }
+            }
+    },
+  "general_ingredients_inTheListName": ", in the {listName} list.",
+  "@general_ingredients_inTheListName": {
+       "placeholders": {
+          "listName": {
+                "type": "String"
+                  }
+                }
+  },
+  "filters_categoryFilter_all": "All",
+  "filters_categoryFilter_collapse": "Collapse",
+  "filters_categoryFilter_expand": "Expand",
+  "filters_categoryFilter_apply": "Apply",
+  "filters_categoryFilter_clearAll": "Clear All",
+  "filters_categoryFilter_selectedCategoryWithCount": "{selectedCategoryCount} Category",
+  "@filters_categoryFilter_selectedCategoryWithCount": {
+    "placeholders": {
+      "selectedCategoryCount": {
+        "type": "int"
+      }
+    }
+  },
+  "filters_categoryFilter_selectedCategoriesWithCount": "{selectedCategoryCount} Categories",
+  "@filters_categoryFilter_selectedCategoriesWithCount": {
+    "placeholders": {
+      "selectedCategoryCount": {
+        "type": "int"
+      }
+    }
+  },
+  "filters_brandFilter_selectedBrandWithCount": "{selectedBrandsCount} Brand",
+  "@filters_brandFilter_selectedBrandWithCount": {
+    "placeholders": {
+      "selectedBrandsCount": {
+        "type": "int"
+      }
+    }
+  },
+  "filters_brandFilter_selectedBrandsWithCount": "{selectedBrandsCount} Brands",
+  "@filters_brandFilter_selectedBrandsWithCount": {
+    "placeholders": {
+      "selectedBrandsCount": {
+        "type": "int"
+      }
+    }
+  },
+  "find_search_or": "or",
+  "find_search_browseAllProducts": "browse all products",
+  "find_search_noResultsMatch": "No results match “{searchedText}”",
+  "@find_search_noResultsMatch": {
+    "placeholders": {
+      "searchedText": {
+        "type": "String",
+        "format": "compact"
+      }
+    }
+  },
+  "find_search_checkTheSpelling": "Check the spelling or try a new search",
+  "filters_ingredientPreferences_title": "Ingredient Preferences",
+  "filters_ingredientPreferences_manageYourPreferences": "Manage your preferences",
+  "filters_ingredientPreferences_doNotShowAvoidedIngredientsProducts": "Do not show products that contain avoided ingredients.",
+  "filters_ingredientPreferences_onlyShowPreferredIngredientsProducts": "Only show products that contain preferred ingredients.",
+  "filters_ingredientPreferences_ingredientsFromPackaging": "Ingredients from Packaging",
+  "general_search":"Search",
+  "scan_submitProducts_makeupHairCareSkinCareAndMore": "Makeup, hair care, skin care and more",
+  "scan_submitProducts_anySpfProductType": "Any SPF product type",
+  "scan_submitProducts_householdAndProfessionalCleaners": "Household and professional cleaners",
+  "scan_submitProducts_snacksMeatSoupsDessertsAndMore": "Snacks, meat, soups, desserts and more",
+  "general_premium_getPremium": "Get Premium",
+  "general_premium_title": "Unlock more with premium",
+  "general_premium_compareProducts": "Compare products instantly, side by side",
+  "general_premium_personalizePreferences": "Personalize your ingredient preferences",
+  "find_browse_failedToLoadCategories":"Failed to load categories",
+  "healthyLivingShared_browseByProduct_searchSunscreen":"Search sunscreen",
+  "account_myAccount_premium": "Premium",
+  "account_premium_shopSmartWithPremium": "Shop smarter with Premium features that let you compare products and filter by the ingredient groups that matter to you.",
+  "healthyLivingShared_deepLink_shareProductMessage": "Have a look at this product I found: {productName}",
+  "@healthyLivingShared_deepLink_shareProductMessage": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
+  "healthyLivingShared_deepLink_shareProductTitle": "Share {productName}",
+  "@healthyLivingShared_deepLink_shareProductTitle": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
+  "healthyLivingShared_deepLink_shareProductSheetTitle": "Share Product",
+  "compare_upgradeNowPopup_compareDescription": "Unlock side by side product comparison with Healthy Living™ Premium.",
+  "compare_upgradeNowPopup_upgradeNow": "Upgrade Now",
+  "healthyLivingShared_deepLink_shareListMessage": "Have a look at this list I created: {listName}",
+  "@healthyLivingShared_deepLink_shareListMessage": {
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "healthyLivingShared_deepLink_shareListTitle": "Share {listName}",
+  "@healthyLivingShared_deepLink_shareListTitle": {
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "healthyLivingShared_deepLink_shareListSheetTitle": "Share List",
+  "filter_ingredientPreferences_upgradeToPremium": "Upgrade to Premium to filter products by the ingredient groups that matter to you.",
+  "filter_ingredientPreferences_learnAboutPremium": "Learn about Premium",
+  "filter_ingredientPreferences_youHaveNotAddedPreferences": "You have not added any preferences yet.",
+  "general_ingredientPreferences_unableToFetchPreferences":"Unable to fetch your preferences",
+  "productDetail_ingredientList_seeAllIngredients": "See All Ingredients",
+  "productDetail_ingredientList_seeLessIngredients": "See Less Ingredients",
+  "productDetail_ingredientList_seeAll": "See All",
+  "productDetail_ingredientList_seeLess": "See Less",
+  "productDetail_ingredients_productAlignWithIngredientPreferences": "Find out if this product aligns with your ingredient preferences.",
+  "productDetail_ingredients_learnMore": "Learn More",
+  "general_ingredients_ingredientsTitle": "Ingredients",
+  "general_ingredients_findings": "Findings",
+  "general_ingredients_useRestrictions": "Use Restrictions",
+  "productSubmit_ingredients_developmentalReproductiveToxicity": "Developmental & Reproductive Toxicity",
+  "productSubmit_ingredients_allergies": "Allergies & Immunotoxicity ",
+  "productSubmit_ingredients_cancer": "Cancer",
+  "productSubmit_ingredients_healthConcerns": "Health Concerns",
+  "general_na": "N/A",
+  "productSubmit_ingredients_theProductScoreTakes": "The product score takes into account these factors:",
+  "home_browse_browseProductByCategory": "Browse Products by Category",
+  "account_ingredientPreference_aboutTitle": "Let us flag the types of ingredients that matter to you",
+  "account_ingredientPreference_aboutDescription": "We’ve grouped ingredient types to make things easier. Pick what you want to avoid or prefer, and we’ll highlight them in the app.",
+  "account_ingredientPreference_infoTitle": "About These Preferences",
+  "account_ingredientPreference_infoDescription": "Ingredient preferences are based solely on the ingredients listed on a product's label and do not account for potential contaminants. \n\nThese preferences are not intended to be used as medical guidance, particularly for serious or life-threatening allergies.",
+  "general_gotIt": "Got it",
+  "general_createAccount": "Create Account",
+  "general_signIn": "Sign In",
+  "productDetail_compareModal_makeMostInformedPurchase": "Make the Most Informed Purchase Decision",
+  "productDetail_compareModal_unAuthenticateDescription": "Compare is a premium feature. You’ll need to Sign In or Create an Account to continue.",
+  "productDetail_ingredientModal_description": "See if this product contains ingredient groups you want to prefer or avoid.",
+  "submitProduct_productSubmission_instantHazardScore":"Instant Hazard Score",
+  "submitProduct_productSubmission_thisInstantHazardScore":"This Instant Hazard Score is only visible to you",
+  "submitProduct_productSubmission_thisInstantHazardScoreDes": "Your score is based on the information you provided and the ingredients we were able to match to our database. If you skipped any details, we used default assumptions about the product’s form and use to calculate your score. Your score may be updated after further scientific review.\n\nYou can find all your submitted products in the History tab under My items.",
+  "submitProduct_ingredients_unmatched_title": "{count} of {total} ingredients could not be matched to our database.",
+   "@submitProduct_ingredients_unmatched_title": {
+      "description": "Shown when some ingredients could not be matched",
+      "placeholders": {
+        "count": {
+          "type": "String",
+          "example": "3"
+        },
+        "total": {
+          "type": "String",
+          "example": "10"
+        }
+      }
+    },
+  "submitProduct_ingredients_unmatched_subTitle":"Ingredients We Couldn’t Match:",
+  "submitProduct_productSubmission_instantScore":"Instant Score",
+  "submitProduct_productSubmission_scorePending":"Score Pending",
+  "submitProduct_productSubmission_yourScoreIsBasedOnTheInformation":"Your score is based on the information you provided and the ingredients we were able to match to our database. If you skipped any details, we used default assumptions (e.g., liquid leave-on product, undamaged skin). Your score may be updated after scientific review.",
+  "history_sort_allProducts": "All Products",
+  "history_sort_viewedProducts": "Viewed Products",
+  "history_sort_submittedProducts": "Submitted Products",
+  "filter_header_title": "Filter",
+  "productDetail_ingredientModal_authDescription": "Ingredient Preferences are available with Premium. Sign in or create an account to continue.",
+  "premium_subscriptionConfirmation_confirmingYourSubscription": "Confirming your subscription",
+  "premium_subscriptionConfirmation_successMessageLeading": "Your ",
+  "premium_subscriptionConfirmation_successMessageMiddle": "Healthy Living™",
+  "premium_subscriptionConfirmation_successMessageTrailing": " premium access is now unlocked!",
+  "premium_subscriptionConfirmation_premiumFeatureDescription": "You can now compare products, set ingredients preferences and access deeper insights.",
+  "premium_subscriptionConfirmation_setPreferences": "Set Preferences",
+  "premium_subscriptionConfirmation_iWillDoThatLater": "I’ll do that later",
+  "premium_subscriptionConfirmation_failureTitle": "We couldn’t complete your subscription",
+  "premium_subscriptionConfirmation_somethingWentWrongWhileSettingUp": "Something went wrong while setting up your subscription.",
+  "premium_subscriptionConfirmation_pleaseTryAgain": "Please try again, or check your connection.",
+  "premium_subscriptionConfirmation_continueWithoutPremium": "Continue without premium",
+  "premium_subscriptionConfirmation_subscriptionEndedTitle": "Your premium access has ended",
+  "premium_subscriptionConfirmation_subscriptionEndedDescription": "You can resubscribe at any time to regain full access.",
+  "premium_subscriptionConfirmation_resubscribe": "Resubscribe"
+}

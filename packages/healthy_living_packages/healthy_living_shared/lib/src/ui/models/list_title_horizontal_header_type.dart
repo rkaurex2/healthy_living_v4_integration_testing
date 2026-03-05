@@ -1,0 +1,1 @@
+enum ListTitleHorizontalHeaderType { withLinkType, defaultType }

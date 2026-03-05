@@ -1,0 +1,4 @@
+enum IngredientPreference {
+  avoid,
+  prefer,
+}

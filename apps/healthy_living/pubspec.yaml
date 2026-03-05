@@ -1,0 +1,86 @@
+name: healthy_living
+description: "EWG's Healthy Living"
+publish_to: 'none'
+
+version: 1.0.0+17
+
+environment:
+  sdk: ">=3.7.2 <4.0.0"
+  flutter: ">=3.29.3"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  get_it: ^7.7.0
+  injectable: ^2.4.2
+  go_router: ^16.0.0
+  flutter_dotenv: ^5.2.1
+  google_sign_in: ^7.1.1
+  flutter_native_splash: ^2.4.6
+  flutter_bloc: ^9.1.1
+  flutter_riverpod: ^2.5.1
+  flutter_branch_sdk: ^8.10.0
+  purchases_flutter: ^9.9.1
+  firebase_core: ^3.13.0
+  firebase_crashlytics: ^4.3.5
+  firebase_analytics: ^11.4.5
+  firebase_messaging: ^15.2.10
+  firebase_in_app_messaging: ^0.8.1+10
+  flutter_local_notifications: ^19.5.0
+  rxdart: ^0.28.0
+  app_links: ^6.4.1
+
+  healthy_living_auth:
+    path: ../../packages/healthy_living_packages/healthy_living_auth
+
+  design_system:
+    path: ../../packages/shared_packages/design_system
+
+  network:
+    path: ../../packages/shared_packages/network
+
+  healthy_living_home:
+    path: ../../packages/healthy_living_packages/healthy_living_home
+
+  healthy_living_my_items:
+    path: ../../packages/healthy_living_packages/healthy_living_my_items
+
+  healthy_living_shared:
+      path: ../../packages/healthy_living_packages/healthy_living_shared
+
+  healthy_living_account:
+        path: ../../packages/healthy_living_packages/healthy_living_account
+
+
+  storage:
+    path: ../../packages/shared_packages/storage
+
+  healthy_living_product_detail:
+    path: ../../packages/healthy_living_packages/healthy_living_product_detail
+
+  healthy_living_find:
+    path: ../../packages/healthy_living_packages/healthy_living_find
+
+  healthy_living_scan:
+    path: ../../packages/healthy_living_packages/healthy_living_scan
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  patrol: ^3.6.0
+
+  flutter_lints: ^5.0.0
+  build_runner: ^2.5.3
+  injectable_generator: ^2.6.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/env/

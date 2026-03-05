@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Styleguide" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="filePath" value="$PROJECT_DIR$/apps/styleguide/lib/src/styleguide_main.dart" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,0 +1,67 @@
+name: healthy_living_scan
+description: "Provides features for product scan."
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.7.2 <4.0.0"
+  flutter: ">=3.29.3"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  camera: ^0.11.1
+  flutter_riverpod: ^2.5.1
+  intl: any
+  image: ^4.1.3
+  uuid: ^4.5.1
+  flutter_bloc: ^9.1.1
+  get_it: ^7.7.0
+  injectable: ^2.4.2
+  freezed_annotation: ^3.1.0
+  go_router: ^16.0.0
+  firebase_analytics: ^11.4.5
+
+  # Google Vision with ML Kit
+  google_mlkit_commons: ^0.9.0
+  google_mlkit_barcode_scanning: ^0.13.0
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  dart_mappable: ^4.3.0
+  image_picker: ^1.1.2
+  permission_handler: ^12.0.1
+  flutter_localizations:
+    sdk: flutter
+
+  # Design System
+  design_system:
+    path: ../../shared_packages/design_system
+
+  healthy_living_shared:
+    path: ../healthy_living_shared
+
+  network:
+    path: ../../shared_packages/network
+
+  storage:
+    path: ../../shared_packages/storage
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.5.3
+  dart_mappable_builder: ^4.3.1
+  freezed: ^3.1.0
+  json_serializable: ^6.9.5
+  injectable_generator: ^2.6.1
+  mockito: ^5.4.4
+  bloc_test: ^10.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/icons/

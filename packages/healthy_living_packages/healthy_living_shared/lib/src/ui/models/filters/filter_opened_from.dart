@@ -1,0 +1,4 @@
+enum FilterOpenedFrom {
+  search,
+  browse;
+}

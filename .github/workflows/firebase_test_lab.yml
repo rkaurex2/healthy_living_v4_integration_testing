@@ -1,0 +1,130 @@
+name: firebase-test-lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Test tag to run (smoke or full)'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - full
+      api_level:
+        description: 'Android API level to test'
+        required: true
+        default: '33'
+        type: choice
+        options:
+          - '30'
+          - '31'
+          - '33'
+          - '34'
+  schedule:
+    # Run nightly at 3am UTC (offset from BrowserStack)
+    - cron: '0 3 * * *'
+
+jobs:
+  firebase-test-lab:
+    if: vars.INTEGRATION_TESTS_APPROVED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: stage
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Create stage.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_GOOGLE_CLIENT_ID=${{ vars.ANDROID_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "SERVER_GOOGLE_CLIENT_ID=${{ vars.SERVER_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_REVENUECAT_API_KEY=${{ secrets.ANDROID_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Build Android APKs
+        working-directory: ./apps/healthy_living
+        run: |
+          # Build the app APK
+          flutter build apk --flavor stage -t lib/main.dart \
+            --dart-define=ENVIRONMENT=stage \
+            --dart-define=INTEGRATION_TESTS_APPROVED=true \
+            --dart-define=TEST_ACCOUNT_EMAIL=${{ secrets.TEST_ACCOUNT_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PASSWORD=${{ secrets.TEST_ACCOUNT_PASSWORD }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_EMAIL=${{ secrets.TEST_ACCOUNT_PREMIUM_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_PASSWORD=${{ secrets.TEST_ACCOUNT_PREMIUM_PASSWORD }}
+
+          # Build the instrumentation test APK
+          pushd android
+          ./gradlew app:assembleStageAndroidTest
+          popd
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_DATA }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.FIREBASE_PROJECT_ID }}
+
+      - name: Run Firebase Test Lab
+        run: |
+          API_LEVEL=${{ inputs.api_level || '33' }}
+          TAG=${{ inputs.tag || 'smoke' }}
+
+          # Select device model based on API level
+          case "$API_LEVEL" in
+            30) DEVICE="redfin" ;;
+            31) DEVICE="oriole" ;;
+            33) DEVICE="cheetah" ;;
+            34) DEVICE="husky" ;;
+            *) DEVICE="cheetah" ;;
+          esac
+
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app apps/healthy_living/build/app/outputs/flutter-apk/app-stage-release.apk \
+            --test apps/healthy_living/build/app/outputs/apk/androidTest/stage/debug/app-stage-debug-androidTest.apk \
+            --device "model=$DEVICE,version=$API_LEVEL,locale=en,orientation=portrait" \
+            --timeout 30m \
+            --results-bucket="${{ vars.FIREBASE_PROJECT_ID }}-test-results" \
+            --results-dir="integration-tests/${{ github.run_id }}" \
+            --record-video \
+            --use-orchestrator \
+            --environment-variables clearPackageData=true \
+            --num-flaky-test-attempts=1
+
+      - name: Download test results
+        if: always()
+        run: |
+          mkdir -p test-results
+          gsutil -m cp -r "gs://${{ vars.FIREBASE_PROJECT_ID }}-test-results/integration-tests/${{ github.run_id }}/**" test-results/ || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-test-lab-results-api${{ inputs.api_level || '33' }}
+          path: test-results/
+          retention-days: 7

@@ -1,0 +1,1 @@
+enum AppPaywallResult { notPresented, cancelled, error, purchased, restored }

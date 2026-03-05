@@ -1,0 +1,1 @@
+enum WalkThroughType { custom, regular }

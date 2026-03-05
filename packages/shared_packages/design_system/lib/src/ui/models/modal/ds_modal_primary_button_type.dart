@@ -1,0 +1,1 @@
+enum DSModalPrimaryButtonType { dsPrimary, dsSecondary }

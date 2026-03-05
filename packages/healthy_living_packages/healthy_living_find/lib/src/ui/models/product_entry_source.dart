@@ -1,0 +1,4 @@
+enum ProductsEntrySource {
+  normal,
+  fromAllTabViewAll,
+}

@@ -1,0 +1,38 @@
+name: 'Cleanup Build Artifacts'
+description: 'Cleans up build artifacts and old caches on self-hosted runners'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clean old caches (pre-job)
+      if: runner.environment == 'self-hosted'
+      shell: bash
+      run: |
+        echo "Cleaning old caches and build artifacts from previous runs..."
+        
+        # Remove caches older than 7 days
+        find ~/.cache -type f -mtime +7 -delete 2>/dev/null || true
+        
+        # Clean old Gradle daemon logs and tmp files
+        rm -rf ~/.gradle/daemon/*/daemon-*.out.log 2>/dev/null || true
+        rm -rf ~/.gradle/native 2>/dev/null || true
+        
+        # Clean Flutter build caches from other workspaces
+        find /tmp -maxdepth 1 -name "flutter_*" -type d -mtime +1 -exec rm -rf {} + 2>/dev/null || true
+        
+        # Show disk usage
+        echo "Current disk usage:"
+        df -h . | tail -1
+        
+    - name: Cleanup build artifacts
+      if: runner.environment == 'self-hosted'
+      shell: bash
+      working-directory: ${{ github.workspace }}/apps/healthy_living
+      run: |
+        echo "Cleaning up build artifacts..."
+        flutter clean || true
+        cd android && ./gradlew clean || true
+        rm -rf build/ 2>/dev/null || true
+        rm -rf .dart_tool/ 2>/dev/null || true
+        echo "Cleanup completed"
+        echo "Note: Gradle cache is managed by GitHub Actions cache action"

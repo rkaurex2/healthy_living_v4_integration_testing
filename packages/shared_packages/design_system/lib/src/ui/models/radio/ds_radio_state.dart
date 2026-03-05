@@ -1,0 +1,1 @@
+enum DSRadioState { normal, disabled }

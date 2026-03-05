@@ -1,0 +1,189 @@
+name: browserstack-integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Test tag to run (smoke or full)'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - full
+  schedule:
+    # Run smoke tests nightly at 2am UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  browserstack-android:
+    if: vars.INTEGRATION_TESTS_APPROVED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: stage
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Create stage.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_GOOGLE_CLIENT_ID=${{ vars.ANDROID_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "SERVER_GOOGLE_CLIENT_ID=${{ vars.SERVER_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "ANDROID_REVENUECAT_API_KEY=${{ secrets.ANDROID_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Build Android test APK
+        working-directory: ./apps/healthy_living
+        run: |
+          flutter build apk --flavor stage -t lib/main.dart \
+            --dart-define=ENVIRONMENT=stage \
+            --dart-define=INTEGRATION_TESTS_APPROVED=true \
+            --dart-define=TEST_ACCOUNT_EMAIL=${{ secrets.TEST_ACCOUNT_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PASSWORD=${{ secrets.TEST_ACCOUNT_PASSWORD }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_EMAIL=${{ secrets.TEST_ACCOUNT_PREMIUM_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_PASSWORD=${{ secrets.TEST_ACCOUNT_PREMIUM_PASSWORD }}
+
+      - name: Build integration test APK
+        working-directory: ./apps/healthy_living
+        run: |
+          pushd android
+          ./gradlew app:assembleStageAndroidTest
+          popd
+
+      - name: Upload to BrowserStack
+        run: |
+          APP_URL=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESS_KEY }}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+            -F "file=@apps/healthy_living/build/app/outputs/flutter-apk/app-stage-release.apk" \
+            | jq -r '.app_url')
+          echo "APP_URL=$APP_URL" >> $GITHUB_ENV
+
+          TEST_URL=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESS_KEY }}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/espresso/v2/test-suite" \
+            -F "file=@apps/healthy_living/build/app/outputs/apk/androidTest/stage/debug/app-stage-debug-androidTest.apk" \
+            | jq -r '.test_suite_url')
+          echo "TEST_URL=$TEST_URL" >> $GITHUB_ENV
+
+      - name: Run BrowserStack tests
+        run: |
+          BUILD_RESPONSE=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESS_KEY }}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/espresso/v2/build" \
+            -d "{
+              \"app\": \"$APP_URL\",
+              \"testSuite\": \"$TEST_URL\",
+              \"devices\": [
+                \"Samsung Galaxy S23-13.0\",
+                \"Google Pixel 7-13.0\",
+                \"Samsung Galaxy S21-12.0\"
+              ],
+              \"project\": \"EWG Healthy Living - ${{ inputs.tag || 'smoke' }}\",
+              \"networkLogs\": true,
+              \"deviceLogs\": true
+            }")
+          echo "$BUILD_RESPONSE" | tee browserstack-android-response.json
+          BUILD_ID=$(echo "$BUILD_RESPONSE" | jq -r '.build_id // empty')
+          echo "BROWSERSTACK_BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+
+      - name: Upload BrowserStack build info
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browserstack-android-results-${{ github.run_id }}
+          path: browserstack-android-response.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  browserstack-ios:
+    if: vars.INTEGRATION_TESTS_APPROVED == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    environment: stage
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+
+      - name: Setup melos
+        run: dart pub global activate melos
+
+      - name: Link project packages
+        run: melos bootstrap || exit 10
+
+      - name: Generate localization files
+        run: melos gen-l10n || exit 11
+
+      - name: Create stage.env file
+        run: |
+          mkdir -p apps/healthy_living/assets/env
+          echo "ENV_NAME=${{ vars.ENV_NAME }}" > apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "API_URL=${{ vars.API_URL }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_GOOGLE_CLIENT_ID=${{ vars.IOS_GOOGLE_CLIENT_ID }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+          echo "IOS_REVENUECAT_API_KEY=${{ secrets.IOS_REVENUECAT_API_KEY }}" >> apps/healthy_living/assets/env/${{ vars.ENV_NAME }}.env
+
+      - name: Build iOS test bundle
+        working-directory: ./apps/healthy_living
+        run: |
+          flutter build ios --release --no-codesign --flavor stage -t lib/main.dart \
+            --dart-define=ENVIRONMENT=stage \
+            --dart-define=INTEGRATION_TESTS_APPROVED=true \
+            --dart-define=TEST_ACCOUNT_EMAIL=${{ secrets.TEST_ACCOUNT_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PASSWORD=${{ secrets.TEST_ACCOUNT_PASSWORD }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_EMAIL=${{ secrets.TEST_ACCOUNT_PREMIUM_EMAIL }} \
+            --dart-define=TEST_ACCOUNT_PREMIUM_PASSWORD=${{ secrets.TEST_ACCOUNT_PREMIUM_PASSWORD }}
+
+      - name: Upload to BrowserStack
+        run: |
+          cd apps/healthy_living/build/ios/iphoneos
+          zip -r Runner.zip Runner.app
+          APP_URL=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESS_KEY }}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+            -F "file=@Runner.zip" \
+            | jq -r '.app_url')
+          echo "APP_URL=$APP_URL" >> $GITHUB_ENV
+
+      - name: Run BrowserStack iOS tests
+        run: |
+          BUILD_RESPONSE=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESS_KEY }}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/xcuitest/v2/build" \
+            -d "{
+              \"app\": \"$APP_URL\",
+              \"devices\": [
+                \"iPhone 15-17\",
+                \"iPhone 14-16\"
+              ],
+              \"project\": \"EWG Healthy Living iOS - ${{ inputs.tag || 'smoke' }}\"
+            }")
+          echo "$BUILD_RESPONSE" | tee browserstack-ios-response.json
+
+      - name: Upload BrowserStack iOS build info
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browserstack-ios-results-${{ github.run_id }}
+          path: browserstack-ios-response.json
+          retention-days: 7
+          if-no-files-found: ignore

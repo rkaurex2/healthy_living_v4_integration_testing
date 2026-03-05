@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+    <string name="app_name">Healthy Living</string>
+    <string name="branch_host">open</string>
+    <string name="branch_scheme">healthyliving</string>
+    <string name="deeplink_link">healthyliving.ewg.org</string>
+    <string name="deeplink_alternate_link">ecxno-alternate.app.link</string>
+    <string name="branch_io_sdk_test_key">""</string>
+    <string name="branch_io_sdk_live_key">key_live_eCxj0JQSbzzPNBW8cEFfQfeluCpvABAa</string>
+</resources>

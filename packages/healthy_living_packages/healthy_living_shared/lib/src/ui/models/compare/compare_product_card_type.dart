@@ -1,0 +1,1 @@
+enum CompareProductCardType { addAnother, addScanSearch }

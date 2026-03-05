@@ -1,0 +1,65 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    require_trailing_commas: true
+    always_declare_return_types: true
+    avoid_init_to_null: true
+    await_only_futures: true
+    cancel_subscriptions: true
+    close_sinks: true
+    control_flow_in_finally: true
+    empty_catches: true
+    always_put_required_named_parameters_first: true
+    always_use_package_imports: true
+    avoid_relative_lib_imports: true
+    unawaited_futures: true
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*_localizations.dart"
+    - "**/*_localizations_*.dart"
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+  errors:
+    unused_local_variable: warning
+    unused_import: warning
+    dead_code: error
+    missing_required_param: error
+    missing_return: error
+    parameter_assignments: error
+    invalid_annotation_target: ignore
+    depend_on_referenced_packages: error
+    prefer_const_constructors_in_immutables: error
+    prefer_const_constructors: error
+    dead_null_aware_expression: error
+    no_logic_in_create_state: error
+    iterable_contains_unrelated_type: error
+    always_declare_return_types: error
+    undefined_hidden_name: error
+    unused_field: error
+    provide_deprecation_message: error
+    hash_and_equals: error
+    override_on_non_overriding_member: error
+    implementation_imports: error
+    invalid_null_aware_operator: error
+    unnecessary_null_comparison: error
+    body_might_complete_normally_nullable: error
+    unnecessary_new: error
+    prefer_collection_literals: error
+    empty_statements: error
+    annotate_overrides: error
+    unnecessary_this: error
+    file_names: error
+    unnecessary_import: error
+    use_super_parameters: error
+    non_constant_identifier_names: error
+    prefer_const_declarations: error
+    prefer_const_literals_to_create_immutables: error
+    unused_element: error
+    unused_catch_clause: error
+    unused_catch_stack: error
+    duplicate_import: error
+    unrelated_type_equality_checks: error

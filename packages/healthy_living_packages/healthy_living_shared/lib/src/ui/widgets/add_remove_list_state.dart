@@ -1,0 +1,1 @@
+enum AddRemoveListState { normal, disable }
